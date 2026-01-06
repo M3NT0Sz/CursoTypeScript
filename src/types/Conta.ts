@@ -1,23 +1,25 @@
-import { GrupoTransacao } from "./GrupoTansacao";
-import { TipoTransacao } from "./TipoTransacao";
-import { Transacao } from "./Transacao";
+import { Armazenador } from "./Armazenador.js";
+import { GrupoTransacao } from "./GrupoTansacao.js";
+import { TipoTransacao } from "./TipoTransacao.js";
+import { Transacao } from "./Transacao.js";
 
 export class Conta {
-  nome: string;
-  saldo: number = JSON.parse(localStorage.getItem("saldo")) || 0;
-  transacoes: Transacao[] =
-    JSON.parse(
-      localStorage.getItem("transacoes"),
-      (key: string, value: any) => {
-        if (key === "data") {
-          return new Date(value);
-        }
-        return value;
+  protected nome: string;
+  protected saldo: number = Armazenador.obter("saldo") || 0;
+  private transacoes: Transacao[] =
+    Armazenador.obter("transacoes", (key: string, value: any) => {
+      if (key === "data") {
+        return new Date(value);
       }
-    ) || [];
+      return value;
+    }) || [];
 
   constructor(nome: string) {
     this.nome = nome;
+  }
+
+  public getTitular() {
+    return this.nome;
   }
 
   getGrupoTransacoes(): GrupoTransacao[] {
@@ -69,7 +71,7 @@ export class Conta {
 
     this.transacoes.push(novaTransacao);
     console.log(this.getGrupoTransacoes());
-    localStorage.setItem("transacoes", JSON.stringify(this.transacoes));
+    Armazenador.salvar("transacoes", this.transacoes);
   }
 
   debitar(valor: number): void {
@@ -80,7 +82,7 @@ export class Conta {
       throw new Error("Saldo insuficiente para a operação de débito.");
     }
     this.saldo -= valor;
-    localStorage.setItem("saldo", this.saldo.toString());
+    Armazenador.salvar("saldo", this.saldo);
   }
 
   depositar(valor: number): void {
@@ -88,10 +90,11 @@ export class Conta {
       throw new Error("O valor a ser depositado deve ser maior que zero.");
     }
     this.saldo += valor;
-    localStorage.setItem("saldo", this.saldo.toString());
+    Armazenador.salvar("saldo", this.saldo);
   }
 }
 
 const conta = new Conta("Joana da Silva Oliveira");
+console.log("Conta criada para:", conta.getTitular());
 
 export default conta;
